@@ -26,7 +26,7 @@ station <interface> show
 quit
 ```
 
-Synchronaze package databases
+Synchronize package databases
 ```bash
 pacman -Sy
 ```
