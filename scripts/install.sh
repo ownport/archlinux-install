@@ -9,10 +9,10 @@ source libs/datetime.sh
 source libs/packages.sh
 source libs/config.sh
 
-info "ArchLinux Installation"
-
-warning "The installation will be started in 10 secs" && \
+warning "The automated installation will be started in 10 secs" && \
     sleep 10
+
+info "ArchLinux Installation"
 
 info "Updating local packages" && \
     network_check_ip_connectivity && \
@@ -24,7 +24,8 @@ info "Preparing disk before installation" &&
     disk_unmount_partitions && \
     disk_wipe_partitions && \
     disk_create_partitions && \
-    disk_format_and_mount_partitions
+    disk_format_partitions && \
+    disk_mount_partitions
 
 info "Installing Core System Components" && \
     packages_install_base_system && \
