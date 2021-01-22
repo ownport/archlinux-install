@@ -1,50 +1,14 @@
-# archlinux-install
+# ArchLinux Installation Scripts
 
-The collection of scripts for automated ArchLinux Installation.
+The collection of scripts for ArchLinux Installation. 
 
-## How-to use
+**WARNING!** Please be aware these scripts in this repo can damage your disk and/or data, use them at your own risk.
 
-### Prepeare USB drive with ArchLinux Live installation
+## Installation Scripts
 
-Pre-Installation Steps
+Check `scripts/` directory
 
-### Installation on a disk
+## Ansible Playbook
 
-Check internet conection
-```bash
-ping -c 5 archlinux.org
-```
-If no success, configure WiFi network, if required, with  `iwctl`
+Check `playbook/` directory
 
-```
-device list
-device <interface> show
-station <interface> show
-station <interface> scan
-station <interface> connect <SSID>
-station <interface> show
-quit
-```
-
-Synchronize package databases
-```bash
-pacman -Sy
-```
-
-Install Git
-```bash
-pacman -S git
-```
-
-Clone Git repo for installation scripts
-```bash
-cd ~
-git clone --depth 1 git://github.com/ownport/archlinux-install.git
-cd archlinux-install
-```
-
-
-## Documentation
-
-- [https://wiki.archlinux.org/index.php/installation_guide](https://wiki.archlinux.org/index.php/installation_guide)
-- [Grub](https://wiki.archlinux.org/index.php/GRUB)
