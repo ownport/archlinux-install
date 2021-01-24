@@ -30,10 +30,6 @@ Synchronize package databases
 ```bash
 pacman -Sy
 ```
-Install nano
-```
-pacman -S nano
-```
 
 For configuring sshd service, in the file `/etc/ssh/sshd_config` change the `ChallengeResponseAuthentication` to `yes`.
 ```sh
@@ -64,8 +60,18 @@ cd archlinux-install
 
 ## References
 
+### ArchLinux Install Projects
+
 - https://github.com/krushndayshmookh/krushn-arch
-- https://github.com/MatMoul/archfi
+- MatMoul/archfi
+    - Arch Linux Fast Installer : tutorial installer
+    - https://github.com/MatMoul/archfi
 - https://github.com/pigmonkey/spark/blob/master/INSTALL.md
 - https://github.com/bsd-source/test/blob/main/arch.sh
+- eltonvs/arch_installation.md 
+    - Arch Linux Installation Guide
+    - https://gist.github.com/eltonvs/d8977de93466552a3448d9822e265e38
 
+### systemd-boot
+
+- https://wiki.archlinux.org/index.php/systemd-boot

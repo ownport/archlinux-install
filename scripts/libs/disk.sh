@@ -1,6 +1,22 @@
 #!/bin/bash
 
-set -e
+set -eu
+
+
+# ==========================================================
+# Detect disk type
+# 
+function disk_detect_type() {
+
+    if [ -n "$(echo $DEVICE | grep "^/dev/[a-z]d[a-z]")" ]; then
+        return "SATA"
+    elif [ -n "$(echo $DEVICE | grep "^/dev/nvme")" ]; then
+        return "NVME"
+    elif [ -n "$(echo $DEVICE | grep "^/dev/mmc")" ]; then
+        return "MMC"
+    fi
+    return "UNKNOWN"
+}
 
 # ==========================================================
 # Unmount partitions (if applicable)
@@ -109,4 +125,70 @@ function disk_generate_fstab() {
 
     info "Generate fstab and store it in /mnt/etc/fstab" && \
         genfstab -U -p /mnt >> /mnt/etc/fstab
+
+    # https://wiki.archlinux.org/index.php/Solid_state_drive
+    #
+    # Set DEVICE_TRIM = "true" if your device supports TRIM
+    #
+    # if [ "$DEVICE_TRIM" == "true" ]; then
+    #     sed -i 's/relatime/noatime/' /mnt/etc/fstab
+    #     arch-chroot /mnt systemctl enable fstrim.timer
+    # fi
+}
+
+# ==========================================================
+# Configure GRUB
+# 
+function disk_config_grub() {
+
+    info "Setting GRUB" && \
+        achroot_exec "grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=ArchLinux --recheck" && \
+        achroot_exec "grub-mkconfig -o /boot/grub/grub.cfg" && \
+        achroot_exec "chmod -R g-rwx,o-rwx /boot"
+}
+
+# ==========================================================
+# Configure systemd-boot
+# 
+function disk_config_systemd_boot() {
+
+    LOADER_CONF="/mnt/boot/loader/loader.conf"
+    ARCH_LOADER_CONF="/mnt/boot/loader/entries/archlinux.conf"
+    SYSTEMD_BOOT_HOOK="/mnt/etc/pacman.d/hooks/systemd-boot.hook"
+    ROOT_UUID="$(blkid -s UUID -o value /dev/sda2)"
+
+    info "Setting systemd-boot" && \
+        achroot_exec "systemd-machine-id-setup"
+
+    info "Installing Systemd-Boot to /boot" && \
+        achroot_exec "bootctl --path=/boot install"
+
+    info "Configuring pacman hooks for systemd-boot" && \
+        mkdir -p /mnt/etc/pacman.d/hooks/ && \
+        echo "[Trigger]" > $SYSTEMD_BOOT_HOOK
+        echo "Type = Package" >> $SYSTEMD_BOOT_HOOK
+        echo "Operation = Upgrade" >> $SYSTEMD_BOOT_HOOK
+        echo "Target = systemd" >> $SYSTEMD_BOOT_HOOK
+        echo "" >> $SYSTEMD_BOOT_HOOK
+        echo "[Action]" >> $SYSTEMD_BOOT_HOOK
+        echo "Description = Updating systemd-boot" >> $SYSTEMD_BOOT_HOOK
+        echo "When = PostTransaction" >> $SYSTEMD_BOOT_HOOK
+        echo "Exec = /usr/bin/bootctl update" >> $SYSTEMD_BOOT_HOOK
+        echo "" >> $SYSTEMD_BOOT_HOOK
+
+    info "Updating loader configuration: ${LOADER_CONF}" && \
+        echo 'default       archlinux.conf' > $LOADER_CONF && \
+        echo 'timeout       3' >> $LOADER_CONF && \
+        echo 'editor        no' >> $LOADER_CONF && \
+        echo 'console-mode  max' >> $LOADER_CONF
+
+    info "Adding loader: ${ARCH_LOADER_CONF}" && \
+        echo "title    Arch Linux" > $ARCH_LOADER_CONF && \
+        echo "linux    /vmlinuz-linux" >> $ARCH_LOADER_CONF && \
+        echo "initrd   /intel-ucode.img" >> $ARCH_LOADER_CONF && \
+        echo "initrd   /initramfs-linux.img" >> $ARCH_LOADER_CONF && \
+        echo "options  root='UUID=${ROOT_UUID}' rw" >> $ARCH_LOADER_CONF
+
+    info "Updating systemd-boot " && \
+        achroot_exec "bootctl update"
 }

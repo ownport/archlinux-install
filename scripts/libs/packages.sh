@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -eu
 
 # ==========================================================
 # Install package
@@ -15,7 +15,18 @@ function packages_install() {
 #
 function packages_archroot_install() {
 
-    arch-chroot /mnt /bin/bash -c "pacman -S --noconfirm $@"
+    arch-chroot /mnt pacman -S --noconfirm $@
+}
+
+# ==========================================================
+# Pacman Configuration
+#
+function packages_pacman_config() {
+
+    PACMAN_CONFIG=${1:-/etc/pacman.conf}
+    info "Configuring pacman: ${PACMAN_CONFIG}" && \
+        sed -i 's/#Color/Color/' ${PACMAN_CONFIG}
+        sed -i 's/#TotalDownload/TotalDownload/' ${PACMAN_CONFIG}
 }
 
 # ==========================================================
@@ -48,24 +59,25 @@ function packages_install_base_system() {
 #
 function packages_install_linux_core() {
 
-    info "Installing Linux Core" && \
+    info "Installing Linux Core Packages" && \
         packages_archroot_install \
-            linux && \
-    info "Installing inter-ucode" && \
+            linux # && \
+    # info "Installing Linux Firmware Packages" && \
+    #     packages_archroot_install \
+    #         linux-firmware && \
+    info "Installing inter-ucode package" && \
         packages_archroot_install \
             intel-ucode
-            # linux-firmware
 }
 
 # ==========================================================
 # Install boot system
 #
-function packages_install_boot_system() {
+function packages_install_boot_packages() {
     
-    info "Intalling Boot System" && \
+    info "Intalling Boot Packages" && \
         packages_archroot_install \
-            efibootmgr \
-            systemd-boot
+            efibootmgr 
 }
 
 # ==========================================================
@@ -73,8 +85,9 @@ function packages_install_boot_system() {
 #
 function packages_install_console_tools() {
 
-    info "Installing console tools" && \
+    info "Installing Console Packages" && \
         packages_archroot_install \
+            zsh \
             neovim
 }
 
@@ -96,8 +109,10 @@ function packages_install_base_networking() {
             net-tools \
             openssh
 
-    info "Activating DHCP client service" && \
-        achroot_exec "systemctl enable dhcpcd.service"
+    echo "Configuring network services" && \
+        achroot_exec "systemctl enable dhcpcd.service" && \
+        achroot_exec "systemctl enable systemd-networkd.service" && \
+        achroot_exec "systemctl enable systemd-resolved.service"
 }
 
 # ==========================================================
@@ -105,11 +120,18 @@ function packages_install_base_networking() {
 #
 function packages_install_wireless_networking() {
 
+    SYSTEMD_NETWORK_WIRELESS_CONF="/mnt/etc/systemd/network/25-wireless.network"
+
     info "Installing Wireless Networking" && \
         packages_archroot_install \
-            iw \
-            openresolv \
-            netctl \
-            wireless_tools \
-            wpa_supplicant
+            iwd
+
+    info "Configuring wireless services" && \
+        achroot_exec "systemctl enable iwd.service"
+
+    echo "[Match]" > $SYSTEMD_NETWORK_WIRELESS_CONF
+    echo "Name=wlan0" >> $SYSTEMD_NETWORK_WIRELESS_CONF
+    echo "" >> $SYSTEMD_NETWORK_WIRELESS_CONF
+    echo "[Network]" >> $SYSTEMD_NETWORK_WIRELESS_CONF
+    echo "DHCP=ipv4" >> $SYSTEMD_NETWORK_WIRELESS_CONF
 }

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e 
+set -eu 
 
 # you can also define some variables
 COLOR_BLACK=0
