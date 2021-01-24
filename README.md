@@ -6,9 +6,6 @@ The collection of scripts for ArchLinux Installation.
 
 ## Installation Scripts
 
-Check `scripts/` directory
+Check `scripts/` directory. For more details [scripts/README.md](scripts/README.md)
 
-## Ansible Playbook
-
-Check `playbook/` directory
 
